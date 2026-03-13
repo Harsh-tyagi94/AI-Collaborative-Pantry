@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getUserHistory, loginUser, logoutUser, registerUser } from "../controllers/user.controller.js";
+import { getAboutMe, getUserHistory, loginUser, logoutUser, registerUser } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const userRouter = Router()
@@ -12,5 +12,6 @@ userRouter.route('/signup').post(registerUser)
 userRouter.route('/login').post(loginUser)
 userRouter.route('/logout').post(verifyJWT, logoutUser);
 userRouter.route("/history").get(verifyJWT, getUserHistory);
+userRouter.route("/aboutme").get(verifyJWT, getAboutMe);
 
 export default userRouter;
