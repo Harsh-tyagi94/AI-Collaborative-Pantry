@@ -23,7 +23,7 @@ const startCleanupTask = () => {
                 const membersKey = `room:members:${roomId}`;
                 const members = await redisClient.smembers(membersKey);
                 
-                room.participants = members;
+                room.members = members;
                 room.isActive = false;
                 await room.save();
 

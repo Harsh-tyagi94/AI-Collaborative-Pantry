@@ -78,7 +78,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { user: loggedInUser.username, accessToken },
+        { user: loggedInUser, accessToken },
         "User logged in successfully",
       ),
     );
@@ -93,7 +93,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const getUserHistory = asyncHandler(async (req, res) => {
   const history = await Room.find({
-    $or: [{ admin: req.user._id }, { participants: req.user.username }],
+    $or: [{ admin: req.user._id }, { members: req.user.username }],
   }).sort({ createdAt: -1 }); // Newest first
 
   return res

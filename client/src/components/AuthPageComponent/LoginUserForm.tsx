@@ -66,6 +66,7 @@ export default function LoginUserForm() {
       }
 
       localStorage.setItem("accessToken", data.data.accessToken);
+      // console.log("user from API:", data.data.user);
       dispatch(setUser(data.data.user)); // assuming data.data.user matches your User interface
       dispatch(setAuthLoad()); // set loading to false
 

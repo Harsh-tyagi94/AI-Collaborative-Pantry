@@ -1,5 +1,25 @@
 import mongoose, { Schema } from "mongoose";
 
+const memberSchema = new Schema(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    username: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ["admin", "member"],
+      default: "member",
+    },
+  },
+  { _id: false }
+);
+
 const roomSchema = new mongoose.Schema({
     roomId: {
         type: String,
@@ -21,9 +41,12 @@ const roomSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
-    finalIngredients: [String], 
-    participants: {
-        type: [String],
+    finalIngredients: {
+      type: [String],
+      default: [],
+    },
+    members: {
+        type: [memberSchema],
         default: []
     },
     isActive: {
