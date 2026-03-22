@@ -11,7 +11,7 @@ import { LogOut, User, Plus, Users, History } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/store/slices/authSlice";
 import type { RootState } from "@/store/store";
-import { logoutUser } from "@/api/auth/auth.api";
+import { logoutUserApi } from "@/api/auth/auth.api";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export default function DashboardPage() {
 
   const handleLogout = async () => {
     try {
-      await logoutUser();
+      await logoutUserApi();
 
       dispatch(logout());
 

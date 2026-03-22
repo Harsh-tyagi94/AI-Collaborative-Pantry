@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, ChefHat, Users, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { getRoomHistoryApi, getRoomStateApi } from "@/api/room/room.api";
+import { useDispatch } from "react-redux";
+import { setRoom } from "@/store/slices/roomSlice";
 
 type Recipe = {
   recipeText: string;
@@ -24,6 +26,8 @@ type Room = {
 };
 
 export default function GetRoomHistory() {
+  const dispatch = useDispatch();
+
   const [adminRooms, setAdminRooms] = useState<Room[]>([]);
   const [memberRooms, setMemberRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +66,12 @@ export default function GetRoomHistory() {
       if (room.isActive) {
         navigate(`/room/${roomId}`);
       } else {
+        dispatch(
+          setRoom({
+            roomId: room.roomId,
+            adminId: room.adminId,
+          }),
+        );
         navigate(`/room/${roomId}/recipe`);
       }
     } catch (err: any) {

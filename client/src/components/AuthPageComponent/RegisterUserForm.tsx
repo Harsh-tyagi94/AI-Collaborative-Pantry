@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 
 import { Mail, Lock, User, Loader2, ArrowRight } from "lucide-react";
 import { registerUserSchema } from "@/schemas/auth.schema.ts";
-import { registerUser } from "@/api/auth/auth.api";
+import { registerUserApi } from "@/api/auth/auth.api";
 
 interface RegisterForm {
   username: string;
@@ -44,7 +44,7 @@ export default function RegisterUserForm() {
         return;
       }
       
-      await registerUser(form);
+      await registerUserApi(form);
 
       toast.success("Account created successfully 🎉", {
         description: "Redirecting to login...",

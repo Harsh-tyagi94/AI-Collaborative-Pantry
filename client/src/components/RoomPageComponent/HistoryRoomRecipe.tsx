@@ -9,7 +9,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
-import { getSavedRecipes } from "@/api/recipe/recipe.api";
+import { getSavedRecipesApi } from "@/api/recipe/recipe.api";
 import { deleteRoomApi } from "@/api/room/room.api";
 
 import type { RootState } from "@/store/store";
@@ -28,10 +28,14 @@ export default function RoomRecipePage() {
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const adminId = useSelector((state: RootState) => state.room.adminId);
 
+  console.log("currentUser:", currentUser);
+  console.log("adminId:", adminId);
+
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchRecipes = async (pageNumber = 1) => {
     try {
@@ -39,7 +43,7 @@ export default function RoomRecipePage() {
 
       setLoading(true);
 
-      const data = await getSavedRecipes(roomId, pageNumber, 5);
+      const data = await getSavedRecipesApi(roomId, pageNumber, 5);
 
       const normalized = (data.data.recipes || []).map((r: any) => ({
         id: r._id,
@@ -76,7 +80,6 @@ export default function RoomRecipePage() {
     fetchRecipes(1);
   }, [roomId]);
 
-
   const handleScroll = (e: any) => {
     const { scrollTop } = e.target;
 
@@ -89,13 +92,13 @@ export default function RoomRecipePage() {
     if (!roomId) return;
 
     const confirmDelete = window.confirm(
-      "Are you sure you want to delete this room? This action cannot be undone."
+      "Are you sure you want to delete this room? This action cannot be undone.",
     );
 
     if (!confirmDelete) return;
 
     try {
-      setLoading(true);
+      setDeleting(true);
 
       await deleteRoomApi(roomId);
 
@@ -116,7 +119,7 @@ export default function RoomRecipePage() {
 
       toast.error(err.message || "Failed to delete room");
     } finally {
-      setLoading(false);
+      setDeleting(false);
     }
   };
 
@@ -167,9 +170,7 @@ export default function RoomRecipePage() {
                 </div>
 
                 {/* RECIPE */}
-                <p className="text-sm whitespace-pre-line">
-                  {item.recipe}
-                </p>
+                <p className="text-sm whitespace-pre-line">{item.recipe}</p>
               </CardContent>
             </Card>
           ))
@@ -190,15 +191,14 @@ export default function RoomRecipePage() {
         )}
       </div>
 
-      {/* 🔥 DELETE BUTTON (ADMIN ONLY) */}
-      {currentUser?.username === adminId && (
+      {currentUser?._id === adminId && (
         <div className="pt-4 flex justify-end">
           <Button
             variant="destructive"
             onClick={handleDeleteRoom}
-            disabled={loading}
+            disabled={deleting}
           >
-            Delete Room
+            {deleting ? "Deleting..." : "Delete Room"}
           </Button>
         </div>
       )}

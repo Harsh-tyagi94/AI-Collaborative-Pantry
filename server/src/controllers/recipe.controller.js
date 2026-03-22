@@ -1,6 +1,7 @@
 import { redisClient } from "../db/index.js";
 import { Recipe } from "../models/recipe.model.js";
 import { Room } from "../models/room.model.js";
+import { generateRecipeFromIngredients } from "../utils/aiService.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -31,7 +32,6 @@ const generateRecipe = asyncHandler(async (req, res) => {
   }
 
   const recipe = await generateRecipeFromIngredients(ingredients);
-  
 
   req.app.get("io").to(roomId).emit("recipe_generated", {
     recipe,

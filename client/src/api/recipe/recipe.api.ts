@@ -1,6 +1,6 @@
 import api from "@/lib/axios";
 
-export const getSavedRecipes = async (
+export const getSavedRecipesApi = async (
   roomId: string,
   page: number = 1,
   limit: number = 5
@@ -12,12 +12,12 @@ export const getSavedRecipes = async (
   return response.data;
 };
 
-export const generateRecipe = async (roomId: string) => {
+export const generateRecipeApi = async (roomId: string) => {
   const response = await api.post(`/recipes/${roomId}/generate`);
   return response.data;
 };
 
-export const saveRecipe = async (
+export const saveRecipeApi = async (
   roomId: string,
   recipe: string,
   ingredients: string[]

@@ -332,6 +332,7 @@ const getRoomRecipe = asyncHandler(async (req, res) => {
       {
         roomId: room.roomId,
         roomName: room.roomName,
+        adminId: room.admin,
         isActive: room.isActive
       },
       "Recipe retrieved successfully",

@@ -1,16 +1,16 @@
 import api from "@/lib/axios";
 
-export const createRoom = async (roomName: string) => {
+export const createRoomApi = async (roomName: string) => {
   const response = await api.post("/rooms/create", { roomName });
   return response.data;
 };
 
-export const joiningRoom = async (roomId: string) => {
+export const joiningRoomApi = async (roomId: string) => {
   const response = await api.post(`/rooms/${roomId}/join`);
   return response.data;
 };
 
-export const addIngredient = async (
+export const addIngredientApi = async (
   roomId: string,
   ingredient: string
 ) => {
@@ -39,7 +39,7 @@ export const removeIngredientApi = async (
 
 export const getRoomHistoryApi = async () => {
   const response = await api.get("/rooms/gethistory");
-  return response.data; // already normalized by interceptor
+  return response.data;
 };
 
 export const getRoomStateApi = async (roomId: string) => {

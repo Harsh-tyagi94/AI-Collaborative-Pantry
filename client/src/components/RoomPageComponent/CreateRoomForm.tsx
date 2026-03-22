@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Plus, Loader2, Hash } from "lucide-react";
 import { createRoomSchema } from "@/schemas/room.schema";
-import { createRoom } from "@/api/room/room.api";
+import { createRoomApi } from "@/api/room/room.api";
 
 export default function CreateRoomForm() {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export default function CreateRoomForm() {
         return;
       }
 
-      const data = await createRoom(roomName)
+      const data = await createRoomApi(roomName)
 
       setRoomId(data.data.roomId);
       toast.success("Room created successfully! 🍳");

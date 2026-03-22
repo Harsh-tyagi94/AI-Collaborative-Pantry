@@ -8,6 +8,7 @@ interface RecipeItem {
 
 interface RecipeState {
   currentRecipe: string | null;
+  ingredient: string[];
   isSaved: boolean;
   savedRecipes: RecipeItem[];
   page: number;
@@ -16,6 +17,7 @@ interface RecipeState {
 
 const initialState: RecipeState = {
   currentRecipe: null,
+  ingredient: [],
   isSaved: false,
   savedRecipes: [],
   page: 1,
@@ -26,8 +28,9 @@ const recipeSlice = createSlice({
   name: "recipe",
   initialState,
   reducers: {
-    setRecipe(state, action: PayloadAction<string>) {
-      state.currentRecipe = action.payload;
+    setRecipe(state, action: PayloadAction<{ recipe: string; ingredient: string[] }>) {
+      state.currentRecipe = action.payload.recipe;
+      state.ingredient = action.payload.ingredient;
       state.isSaved = false;
     },
 
@@ -59,6 +62,7 @@ const recipeSlice = createSlice({
 
     clearRecipe(state) {
       state.currentRecipe = null;
+      state.ingredient = []
       state.isSaved = false;
     },
   },

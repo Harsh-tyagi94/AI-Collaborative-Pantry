@@ -14,7 +14,7 @@ import { loginUserSchema } from "@/schemas/auth.schema";
 
 import { useDispatch } from "react-redux";
 import { setUser, setAuthLoad } from "@/store/slices/authSlice";
-import { loginUser } from "@/api/auth/auth.api";
+import { loginUserApi } from "@/api/auth/auth.api";
 
 export default function LoginUserForm() {
   const navigate = useNavigate();
@@ -50,7 +50,7 @@ export default function LoginUserForm() {
         return;
       }
 
-      const data = await loginUser(formData);
+      const data = await loginUserApi(formData);
 
       localStorage.setItem("accessToken", data.data.accessToken);
       // console.log("user from API:", data.data.user);

@@ -7,8 +7,8 @@ const startCleanupTask = () => {
     cron.schedule("0 0 * * *", async () => {
         console.log("Running daily Kitchen cleanup...");
         try {
-            // 1. Find rooms that have been 'Active' for more than 15 hours
-            const twentyFourHoursAgo = new Date(Date.now() - 15 * 60 * 60 * 1000);
+            // 1. Find rooms that have been 'Active' for more than 12 hours
+            const twentyFourHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
             
             const staleRooms = await Room.find({
                 isActive: true,

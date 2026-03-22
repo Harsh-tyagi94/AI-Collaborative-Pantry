@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { IngredientInputSchema } from "@/schemas/ingredient.schema";
 
 import { toast } from "sonner";
-import { addIngredient } from "@/api/room/room.api";
+import { addIngredientApi } from "@/api/room/room.api";
 
 export default function IngredientInput() {
   const { roomId } = useParams();
@@ -32,7 +32,7 @@ export default function IngredientInput() {
       if (!roomId) return;
       setLoading(true);
 
-      await addIngredient(roomId, ingredient);
+      await addIngredientApi(roomId, ingredient);
 
       setIngredient("");
 

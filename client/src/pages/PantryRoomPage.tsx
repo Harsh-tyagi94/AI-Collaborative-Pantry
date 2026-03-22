@@ -12,7 +12,7 @@ import type { RootState } from "@/store/store";
 import { setRoom, setRoomReady, setUsers } from "@/store/slices/roomSlice";
 
 import { socket } from "@/lib/socket.ts";
-import { joiningRoom } from "@/api/room/room.api";
+import { joiningRoomApi } from "@/api/room/room.api";
 
 export default function PantryRoomPage() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -23,23 +23,6 @@ export default function PantryRoomPage() {
   const users = useSelector((state: RootState) => state.room.users);
 
   useEffect(() => {
-    const handleOnlineUsers = (users: string[]) => {
-      const mappedUsers = users.map((username) => ({
-        id: username,
-        username,
-      }));
-
-      dispatch(setUsers(mappedUsers));
-    };
-
-    socket.on("online_users", handleOnlineUsers);
-
-    return () => {
-      socket.off("online_users", handleOnlineUsers);
-    };
-  }, [dispatch]);
-
-  useEffect(() => {
     // console.log("useEffect fired", { roomId, currentUser });
     const joinRoom = async () => {
       // console.log("joinRoom called", { roomId, currentUser });
@@ -48,7 +31,7 @@ export default function PantryRoomPage() {
       }
 
       try {
-        const data = await joiningRoom(roomId);
+        const data = await joiningRoomApi(roomId);
 
         const room = data.data.room;
         const members = data.data.members;
@@ -56,7 +39,7 @@ export default function PantryRoomPage() {
         dispatch(
           setRoom({
             roomId: room.roomId,
-            adminId: room.admin.username,
+            adminId: room.admin,
           }),
         );
 
@@ -99,6 +82,23 @@ export default function PantryRoomPage() {
 
     joinRoom();
   }, [roomId, currentUser, dispatch]);
+
+  useEffect(() => {
+    const handleOnlineUsers = (users: string[]) => {
+      const mappedUsers = users.map((username) => ({
+        id: username,
+        username,
+      }));
+
+      dispatch(setUsers(mappedUsers));
+    };
+
+    socket.on("online_users", handleOnlineUsers);
+
+    return () => {
+      socket.off("online_users", handleOnlineUsers);
+    };
+  }, [dispatch]);
 
   useEffect(() => {
     return () => {

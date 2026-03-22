@@ -13,7 +13,7 @@ import PublicRoute from "./routes/PublicRoute";
 import type { RootState } from "./store/store";
 import GetRoomHistory from "./components/RoomPageComponent/GetRoomHistory";
 import HistoryRoomRecipe from "./components/RoomPageComponent/HistoryRoomRecipe";
-import { getCurrentUser } from "./api/auth/auth.api";
+import { getCurrentUserApi } from "./api/auth/auth.api";
 
 function App() {
   const { isAuthenticated, loading } = useSelector(
@@ -32,7 +32,7 @@ function App() {
       }
 
       try {
-        const data = await getCurrentUser();
+        const data = await getCurrentUserApi();
 
         if (data?.data) {
           dispatch(setUser(data.data));

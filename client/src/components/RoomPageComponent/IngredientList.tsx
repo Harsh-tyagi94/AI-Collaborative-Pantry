@@ -22,6 +22,26 @@ export default function IngredientList() {
   const isRoomReady = useSelector((state: RootState) => state.room.isRoomReady);
 
   useEffect(() => {
+    const fetchIngredients = async () => {
+      try {
+        if (!roomId || !isRoomReady) return;
+
+        const data = await getIngredientsApi(roomId);
+
+        dispatch(setIngredients(data.data.ingredients));
+      } catch (err: any) {
+        if (err.status === 401) {
+          console.error("Unauthorized - redirect if needed");
+          return;
+        }
+        console.error("Failed to fetch ingredients:", err.message);
+      }
+    };
+
+    fetchIngredients();
+  }, [roomId, isRoomReady, dispatch]);
+
+  useEffect(() => {
     const handleIngredientAdded = (data: {
       ingredient: string;
       addedBy: string;
@@ -44,26 +64,6 @@ export default function IngredientList() {
       socket.off("ingredient_removed", handleIngredientRemoved);
     };
   }, [dispatch]);
-
-  useEffect(() => {
-    const fetchIngredients = async () => {
-      try {
-        if (!roomId || !isRoomReady) return;
-
-        const data = await getIngredientsApi(roomId);
-
-        dispatch(setIngredients(data.data.ingredients));
-      } catch (err: any) {
-        if (err.status === 401) {
-          console.error("Unauthorized - redirect if needed");
-          return;
-        }
-        console.error("Failed to fetch ingredients:", err.message);
-      }
-    };
-
-    fetchIngredients();
-  }, [roomId, isRoomReady, dispatch]);
 
   const handleRemoveIngredient = async (ingredient: string) => {
     try {
