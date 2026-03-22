@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { nanoid } from "nanoid";
+import { startCleanupTask } from "../utils/cleanup.js";
 
 const createRoom = asyncHandler(async (req, res) => {
   // 1. Validation (Optional room name, but admin is mandatory)
@@ -256,6 +257,8 @@ const closeRoom = asyncHandler(async (req, res) => {
 
 const getRoomHistory = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+
+  await startCleanupTask();
 
   // helper to format rooms
   const formatRooms = (rooms) =>

@@ -2,40 +2,38 @@ import cron from "node-cron";
 import { Room } from "../models/room.model.js";
 import { redisClient } from "../db/index.js";
 
-const startCleanupTask = () => {
-    // This runs every day at midnight (00:00)
-    cron.schedule("0 0 * * *", async () => {
-        console.log("Running daily Kitchen cleanup...");
-        try {
-            // 1. Find rooms that have been 'Active' for more than 12 hours
-            const twentyFourHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-            
-            const staleRooms = await Room.find({
-                isActive: true,
-                createdAt: { $lt: twentyFourHoursAgo }
-            });
+const startCleanupTask = async () => {
+  console.log("Running Kitchen cleanup...");
 
-            for (const room of staleRooms) {
-                const { roomId } = room;
+  try {
+    // 10 hours ago
+    const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000);
 
-                // 2. Archive whatever members were there
-                const membersKey = `room:${roomId}:online`;
-                const members = await redisClient.smembers(membersKey);
-                
-                room.members = members;
-                room.isActive = false;
-                await room.save();
-
-                // 3. Wipe Redis keys
-                await redisClient.del(
-                    `room:${roomId}:pantry`, 
-                    `room:${roomId}:online`
-                );
-            }
-        } catch (error) {
-            console.error("Cleanup Task Error:", error);
-        }
+    // Find stale rooms
+    const staleRooms = await Room.find({
+      isActive: true,
+      createdAt: { $lt: tenHoursAgo },
     });
+
+    for (const room of staleRooms) {
+      const { roomId } = room;
+
+      // Archive members
+      const membersKey = `room:${roomId}:online`;
+      const members = await redisClient.smembers(membersKey);
+
+      room.members = members;
+      room.isActive = false;
+      await room.save();
+
+      // Delete Redis keys
+      await redisClient.del(`room:${roomId}:pantry`, `room:${roomId}:online`);
+
+      console.log(`Room ${roomId} marked inactive and cleaned.`);
+    }
+  } catch (error) {
+    console.error("Cleanup Task Error:", error);
+  }
 };
 
-export { startCleanupTask }
+export { startCleanupTask };

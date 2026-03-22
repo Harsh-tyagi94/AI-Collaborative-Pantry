@@ -106,7 +106,6 @@ io.on("connection", (socket) => {
 
 databse_connection_infrastructure()
   .then(() => {
-    startCleanupTask();
     server.listen(port, () => {
       console.log(`Server & Socket running on port`);
     });
