@@ -5,8 +5,8 @@ import {
     closeRoom, 
     createRoom, 
     deleteRoom, 
-    generateRecipe, 
     getPantryIngredients, 
+    getRoomHistory, 
     getRoomRecipe, 
     joinRoom, 
     removeIngredient 
@@ -25,10 +25,10 @@ roomRouter.route("/create").post(validate(createRoomSchema), createRoom)
 roomRouter.route("/:roomId/join").post(joinRoom)
 roomRouter.route("/:roomId/add-ingredient").post(apiLimiter, validate(ingredientSchema), addIngredient)
 roomRouter.route("/:roomId/remove-ingredient").delete(apiLimiter, validate(ingredientSchema), removeIngredient)
-roomRouter.route("/:roomId/pantry").get(getPantryIngredients)
-roomRouter.route("/:roomId/generate").post(generateRecipe);
+roomRouter.route("/:roomId/get-ingredients").get(getPantryIngredients)
 roomRouter.route("/:roomId/close").post(closeRoom);
-roomRouter.route("/:roomId/recipe").get(getRoomRecipe);
+roomRouter.route("/gethistory").get(getRoomHistory);
+roomRouter.route("/:roomId/roomstate").get(getRoomRecipe);
 roomRouter.route("/:roomId").delete(deleteRoom);
 
 export default roomRouter;

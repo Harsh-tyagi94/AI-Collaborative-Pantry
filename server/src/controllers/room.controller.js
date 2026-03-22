@@ -1,6 +1,5 @@
 import { redisClient } from "../db/index.js";
 import { Room } from "../models/room.model.js";
-import { generateRecipeFromIngredients } from "../utils/aiService.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -30,7 +29,7 @@ const createRoom = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while creating the room");
   }
 
-  const membersKey = `room:members:${room.roomId}`;
+  const membersKey = `room:${room.roomId}:online`;
   await redisClient.sadd(membersKey, req.user.username);
   await redisClient.expire(membersKey, 86400);
 
@@ -55,7 +54,6 @@ const joinRoom = asyncHandler(async (req, res) => {
   if (!room.isActive) {
     throw new ApiError(400, "This room has been closed");
   }
-
   const isMember = room.members.some(
     (member) => member.username === req.user.username,
   );
@@ -84,16 +82,10 @@ const addIngredient = asyncHandler(async (req, res) => {
   const { roomId } = req.params;
   const { ingredient } = await req.body;
 
-  // 1. Authorization Check: Is this user actually in the room?
-  // 2. We create a unique key for this room's pantry
-  // 3. Add to Redis Set (SADD) and check if it was added or already existed return response
-  // This happens in memory - it's lightning fast!
-  // 4. Keep the pantry alive for 24 hours
-  // 5. SOCKET.IO BROADCAST (The New Part) also Emit 'ingredient_added' event to everyone in the room
-  // 6. Return the updated count or just a success
-
-  const membersKey = `room:members:${roomId}`;
+  const membersKey = `room:${roomId}:online`;
   const isMember = await redisClient.sismember(membersKey, req.user.username);
+
+  // console.log(isMember);
 
   if (!isMember) {
     throw new ApiError(
@@ -106,8 +98,10 @@ const addIngredient = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Ingredient name is required");
   }
 
-  const pantryKey = `pantry:${roomId}`;
+  const pantryKey = `room:${roomId}:pantry`;
   const normalizedIngredient = ingredient.toLowerCase().trim();
+
+  // console.log(normalizedIngredient);
 
   const addedCount = await redisClient.sadd(pantryKey, normalizedIngredient);
   if (addedCount === 0) {
@@ -143,21 +137,17 @@ const removeIngredient = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Ingredient name is required for removal");
   }
 
-  const membersKey = `room:members:${roomId}`;
+  const membersKey = `room:${roomId}:online`;
   const isMember = await redisClient.sismember(membersKey, req.user.username);
 
   if (!isMember) {
     throw new ApiError(403, "You do not have permission to edit this pantry");
   }
 
-  const pantryKey = `pantry:${roomId}`;
+  const pantryKey = `room:${roomId}:pantry`;
   const normalizedIngredient = ingredient.toLowerCase().trim();
 
-  const removedCount = await redisClient.srem(pantryKey, normalizedIngredient);
-
-  if (removedCount === 0) {
-    throw new ApiError(404, "Ingredient not found in the pantry");
-  }
+  await redisClient.srem(pantryKey, normalizedIngredient);
 
   const io = req.app.get("io");
   io.to(roomId).emit("ingredient_removed", {
@@ -188,7 +178,7 @@ const getPantryIngredients = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Room not found");
   }
 
-  const membersKey = `room:members:${roomId}`;
+  const membersKey = `room:${roomId}:online`;
   const isMember = await redisClient.sismember(membersKey, req.user.username);
 
   if (!isMember) {
@@ -198,66 +188,24 @@ const getPantryIngredients = asyncHandler(async (req, res) => {
     );
   }
 
-  const pantryKey = `pantry:${roomId}`;
+  const pantryKey = `room:${roomId}:pantry`;
   const ingredients = await redisClient.smembers(pantryKey);
+
+  const formattedIngredients = ingredients.map((item) => ({
+    ingredient: item,
+    addedBy: "someone", // placeholder (until you upgrade Redis)
+  }));
 
   return res.status(200).json(
     new ApiResponse(
       200,
       {
-        ingredients,
-        count: ingredients.length,
+        ingredients: formattedIngredients,
+        count: formattedIngredients.length,
       },
       "Pantry fetched successfully",
     ),
   );
-});
-
-const generateRecipe = asyncHandler(async (req, res) => {
-  const { roomId } = req.params;
-
-  // 1. Fetch Room to check ownership
-  // 2. ADMIN CHECK: Compare the room's admin ID with the current user's ID
-  // 3. Fetch Ingredients from Redis
-  // 4. Call the AI Service magic happens
-  // 5. BROADCAST: dish to everyone!
-
-  const room = await Room.findOne({ roomId });
-  if (!room) {
-    throw new ApiError(404, "Room not found");
-  }
-
-  if (room.admin.toString() !== req.user._id.toString()) {
-    throw new ApiError(
-      403,
-      "Only the Room Admin (Chef) can generate the recipe",
-    );
-  }
-
-  const pantryKey = `pantry:${roomId}`;
-  const ingredients = await redisClient.smembers(pantryKey);
-
-  if (ingredients.length === 0) {
-    throw new ApiError(
-      400,
-      "The pantry is empty! Add ingredients before cooking.",
-    );
-  }
-
-  const recipe = await generateRecipeFromIngredients(ingredients);
-
-  room.generatedRecipe = recipe;
-  room.finalIngredients = ingredients;
-  await room.save();
-
-  req.app.get("io").to(roomId).emit("recipe_generated", {
-    recipe,
-    generatedBy: req.user.username,
-  });
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, { recipe }, "Recipe generated successfully"));
 });
 
 const closeRoom = asyncHandler(async (req, res) => {
@@ -272,9 +220,8 @@ const closeRoom = asyncHandler(async (req, res) => {
   }
 
   // 2. GET THE FULL REGISTRY (Everyone who ever joined)
-  const pantryKey = `pantry:${roomId}`;
-  const membersKey = `room:members:${roomId}`;
-  const onlineMembersKey = `room:online:${roomId}`;
+  const pantryKey = `room:${roomId}:pantry`;
+  const membersKey = `room:${roomId}:online`;
   const allSessionMembers = await redisClient.smembers(membersKey);
 
   // Archive participants to MongoDB
@@ -288,7 +235,7 @@ const closeRoom = asyncHandler(async (req, res) => {
   );
 
   // 4. REDIS CLEANUP (Memory Management)
-  await redisClient.del(pantryKey, membersKey, onlineMembersKey);
+  await redisClient.del(pantryKey, membersKey);
 
   // 5. Broadcast "Kitchen Closed" to all participants
   const io = req.app.get("io");
@@ -307,6 +254,69 @@ const closeRoom = asyncHandler(async (req, res) => {
     );
 });
 
+const getRoomHistory = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  // helper to format rooms
+  const formatRooms = (rooms) =>
+    rooms.map((room) => {
+      const latestRecipe = room.recipes?.[0];
+
+      return {
+        roomId: room.roomId,
+        roomName: room.roomName,
+        createdAt: room.createdAt,
+        isActive: room.isActive,
+
+        // new fields
+        latestRecipe: latestRecipe
+          ? {
+              recipeText: latestRecipe.recipeText,
+              ingredients: latestRecipe.ingredients,
+              createdAt: latestRecipe.createdAt,
+            }
+          : null,
+
+        recipesCount: room.recipes?.length || 0,
+      };
+    });
+
+  // Admin rooms
+  const adminRoomsRaw = await Room.find({ admin: userId })
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "recipes",
+      options: { sort: { createdAt: -1 }, limit: 1 }, // 🔥 only latest
+      select: "recipeText ingredients createdAt",
+    });
+
+  // Member rooms
+  const memberRoomsRaw = await Room.find({
+    "members.userId": userId,
+    admin: { $ne: userId },
+  })
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "recipes",
+      options: { sort: { createdAt: -1 }, limit: 1 },
+      select: "recipeText ingredients createdAt",
+    });
+
+  const adminRooms = formatRooms(adminRoomsRaw);
+  const memberRooms = formatRooms(memberRoomsRaw);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        adminRooms,
+        memberRooms,
+      },
+      "Room history fetched successfully",
+    ),
+  );
+});
+
 const getRoomRecipe = asyncHandler(async (req, res) => {
   const { roomId } = req.params;
 
@@ -316,57 +326,45 @@ const getRoomRecipe = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Room not found");
   }
 
-  if (room.isActive) {
-    const isMember = await redisClient.sismember(
-      `room:members:${roomId}`,
-      req.user.username,
-    );
-    if (!isMember) {
-      throw new ApiError(404, "No recipe has been generated for this room yet");
-    }
-  } else {
-    if (!room.members.includes(req.user.username)) {
-      throw new ApiError(403, "You were not part of this kitchen's history");
-    }
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, room, "Recipe retrieved successfully"));
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        roomId: room.roomId,
+        roomName: room.roomName,
+        isActive: room.isActive
+      },
+      "Recipe retrieved successfully",
+    ),
+  );
 });
 
 const deleteRoom = asyncHandler(async (req, res) => {
   const { roomId } = req.params;
-
-  // 1. Find the room
-  // 2. Authorization: Only the Admin can delete
-  // 3. NUCLEAR OPTION: Remove everything from Redis
-  // 4. Notify active users via Socket before deleting
-  // 5. Delete from MongoDB
-
   const room = await Room.findOne({ roomId });
-  if (!room) throw new ApiError(404, "Room not found");
 
-  if (room.admin.toString() !== req.user._id.toString()) {
-    throw new ApiError(403, "Only the Room Admin can delete this room");
+  if (!room) {
+    throw new ApiError(404, "Room not found");
   }
 
-  const keys = [
-    `pantry:${roomId}`,
-    `room:members:${roomId}`,
-    `room:online:${roomId}`,
-  ];
-  await redisClient.del(keys);
+  if (room.admin.toString() !== req.user._id.toString()) {
+    throw new ApiError(
+      403,
+      "Only the room admin can delete this room"
+    );
+  }
 
-  req.app.get("io").to(roomId).emit("room_deleted", {
-    message: "The Admin has deleted this room. You are being redirected.",
-  });
+  await Recipe.deleteMany({ roomId });
+  await Room.deleteOne({ roomId });
 
-  await Room.deleteOne({ _id: room._id });
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "Room deleted successfully"));
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      null,
+      "Room and all associated recipes deleted successfully"
+    )
+  );
 });
 
 export {
@@ -375,8 +373,8 @@ export {
   addIngredient,
   removeIngredient,
   getPantryIngredients,
-  generateRecipe,
   closeRoom,
+  getRoomHistory,
   getRoomRecipe,
   deleteRoom,
 };

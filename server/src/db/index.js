@@ -8,11 +8,11 @@ const redisClient = new Redis({
 
 const databse_connection_infrastructure = async () => {
     try {
-        const db_connect = await mongoose.connect(`${process.env.MONGODB_URI}/${process.env.DB_NAME}`)
-        console.log(`connected to db: ${db_connect.connection.host}`)
+        await mongoose.connect(`${process.env.MONGODB_URI}/${process.env.DB_NAME}`)
+        console.log(`connected to db`)
 
-        const redis_ping = await redisClient.ping()
-        console.log(`redis ping: ${redis_ping}`)
+        await redisClient.ping()
+        console.log(`redis ping`)
 
     } catch (error) {
         console.log('ERROR:', error)

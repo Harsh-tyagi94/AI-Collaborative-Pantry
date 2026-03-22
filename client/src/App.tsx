@@ -11,6 +11,9 @@ import { logout, setAuthLoad, setUser } from "./store/slices/authSlice";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 import type { RootState } from "./store/store";
+import GetRoomHistory from "./components/RoomPageComponent/GetRoomHistory";
+import HistoryRoomRecipe from "./components/RoomPageComponent/HistoryRoomRecipe";
+import { getCurrentUser } from "./api/auth/auth.api";
 
 function App() {
   const { isAuthenticated, loading } = useSelector(
@@ -29,32 +32,24 @@ function App() {
       }
 
       try {
-        const fetchUser = await fetch(
-          "http://localhost:8000/api/v1/users/aboutme",
-          {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          },
-        );
+        const data = await getCurrentUser();
 
-        const result = await fetchUser.json();
-        console.log(result)
-        if (fetchUser.ok && result.data) {
-          dispatch(setUser(result.data));
+        if (data?.data) {
+          dispatch(setUser(data.data));
         } else {
           dispatch(logout());
         }
-      } catch (error) {
-        console.error("Auth initialization failed:", error);
-        dispatch(logout());
+      } catch (error: any) {
+        if (error.status === 401) {
+          dispatch(logout());
+        } else {
+          console.error("Auth init error:", error.message);
+        }
       } finally {
         dispatch(setAuthLoad());
       }
     };
-
+    
     initialAuth();
   }, [dispatch]);
 
@@ -109,6 +104,22 @@ function App() {
           element={
             <ProtectedRoute>
               <PantryRoomPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/room/gethistory"
+          element={
+            <ProtectedRoute>
+              <GetRoomHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/room/:roomId/recipe"
+          element={
+            <ProtectedRoute>
+              <HistoryRoomRecipe />
             </ProtectedRoute>
           }
         />

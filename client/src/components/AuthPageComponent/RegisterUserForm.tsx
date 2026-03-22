@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 
 import { Mail, Lock, User, Loader2, ArrowRight } from "lucide-react";
 import { registerUserSchema } from "@/schemas/auth.schema.ts";
+import { registerUser } from "@/api/auth/auth.api";
 
 interface RegisterForm {
   username: string;
@@ -42,22 +43,8 @@ export default function RegisterUserForm() {
         toast.error(result.error.issues[0].message);
         return;
       }
-      const response = await fetch(
-        "http://localhost:8000/api/v1/users/signup",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
-      }
+      
+      await registerUser(form);
 
       toast.success("Account created successfully 🎉", {
         description: "Redirecting to login...",

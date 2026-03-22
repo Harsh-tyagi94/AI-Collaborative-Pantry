@@ -11,6 +11,7 @@ import { LogOut, User, Plus, Users, History } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/store/slices/authSlice";
 import type { RootState } from "@/store/store";
+import { logoutUser } from "@/api/auth/auth.api";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -21,27 +22,17 @@ export default function DashboardPage() {
   const { user } = useSelector((state: RootState) => state.auth);
 
   const handleLogout = async () => {
-    const response = await fetch("http://localhost:8000/api/v1/users/logout", {
-      method: "POST",
-      credentials: "include", // ⭐ important
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    try {
+      await logoutUser();
 
-    const data = await response.json();
+      dispatch(logout());
 
-    if (!response.ok) {
-      throw new Error(data.message || "logout failed");
-    }
+      toast.success("Logged out successfully");
 
-    dispatch(logout());
-
-    toast.success("Logged out successfully");
-
-    setTimeout(() => {
       navigate("/login");
-    }, 1200);
+    } catch (error: any) {
+      toast.error(error.message || "Logout failed");
+    }
   };
 
   const handleJoinRoom = (): void => {
@@ -54,7 +45,7 @@ export default function DashboardPage() {
   };
 
   const handleHistory = (): void => {
-    navigate("/rooms/history");
+    navigate("/room/gethistory");
   };
 
   return (

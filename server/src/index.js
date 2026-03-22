@@ -51,9 +51,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on(
-    "leave_kitchen",
-    async ({ roomId: payloadRoom, username: payloadUser } = {}, ack) => {
+  socket.on("leave_kitchen",async ({ roomId: payloadRoom, username: payloadUser } = {}, ack) => {
       try {
         const roomId = socket.roomId || payloadRoom;
         const username = socket.username || payloadUser;
@@ -99,13 +97,18 @@ io.on("connection", (socket) => {
       console.error("disconnect error:", error);
     }
   });
+
+  socket.on("dislike_recipe", ({ roomId }) => {
+    if (!roomId) return;
+    io.to(roomId).emit("recipe_cleared");
+  });
 });
 
 databse_connection_infrastructure()
   .then(() => {
     startCleanupTask();
     server.listen(port, () => {
-      console.log(`Server & Socket running on port: ${port}`);
+      console.log(`Server & Socket running on port`);
     });
   })
   .catch((err) => {

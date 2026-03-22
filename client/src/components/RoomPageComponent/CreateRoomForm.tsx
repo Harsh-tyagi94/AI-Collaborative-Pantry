@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Plus, Loader2, Hash } from "lucide-react";
 import { createRoomSchema } from "@/schemas/room.schema";
+import { createRoom } from "@/api/room/room.api";
 
 export default function CreateRoomForm() {
   const navigate = useNavigate();
@@ -34,21 +35,7 @@ export default function CreateRoomForm() {
         return;
       }
 
-      const response = await fetch(
-        "http://localhost:8000/api/v1/rooms/create",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ roomName }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to create room");
-      }
+      const data = await createRoom(roomName)
 
       setRoomId(data.data.roomId);
       toast.success("Room created successfully! 🍳");

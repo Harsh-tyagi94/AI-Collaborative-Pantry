@@ -9,12 +9,14 @@ interface RoomState {
   roomId: string | null;
   adminId: string | null;
   users: RoomUser[];
+  isRoomReady: boolean;
 }
 
 const initialState: RoomState = {
   roomId: null,
   adminId: null,
   users: [],
+  isRoomReady: false,
 };
 
 const roomSlice = createSlice({
@@ -47,10 +49,14 @@ const roomSlice = createSlice({
       state.users = [];
       state.adminId = null;
     },
+
+    setRoomReady: (state, action: PayloadAction<boolean>) => {
+      state.isRoomReady = action.payload;
+    },
   },
 });
 
-export const { setRoom, setUsers, addUser, removeUser, clearRoom } =
+export const { setRoom, setUsers, addUser, removeUser, clearRoom, setRoomReady } =
   roomSlice.actions;
 
 export default roomSlice.reducer;

@@ -9,14 +9,10 @@ import IngredientList from "@/components/RoomPageComponent/IngredientList";
 import RecipeDisplay from "@/components/RoomPageComponent/RecipeDisplay";
 
 import type { RootState } from "@/store/store";
-import {
-  addUser,
-  removeUser,
-  setRoom,
-  setUsers,
-} from "@/store/slices/roomSlice";
+import { setRoom, setRoomReady, setUsers } from "@/store/slices/roomSlice";
 
 import { socket } from "@/lib/socket.ts";
+import { joiningRoom } from "@/api/room/room.api";
 
 export default function PantryRoomPage() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -28,7 +24,6 @@ export default function PantryRoomPage() {
 
   useEffect(() => {
     const handleOnlineUsers = (users: string[]) => {
-      console.log("ONLINE USERS EVENT:", users);
       const mappedUsers = users.map((username) => ({
         id: username,
         username,
@@ -47,28 +42,13 @@ export default function PantryRoomPage() {
   useEffect(() => {
     // console.log("useEffect fired", { roomId, currentUser });
     const joinRoom = async () => {
-      // console.log("joinRoom called", { roomId, currentUser }); 
+      // console.log("joinRoom called", { roomId, currentUser });
       if (!roomId || !currentUser) {
-        // console.log("early return — missing roomId or currentUser"); 
         return;
       }
 
       try {
-        // console.log("fetch starting");
-        const response = await fetch(
-          `http://localhost:8000/api/v1/rooms/${roomId}/join`,
-          {
-            method: "POST",
-            credentials: "include",
-          },
-        );
-
-        // console.log("fetch done", response.status);
-        if (!response.ok) {
-          throw new Error("Failed to join room");
-        }
-
-        const data = await response.json();
+        const data = await joiningRoom(roomId);
 
         const room = data.data.room;
         const members = data.data.members;
@@ -86,8 +66,10 @@ export default function PantryRoomPage() {
             : [{ id: currentUser.username, username: currentUser.username }];
 
         dispatch(setUsers(mappedUsers));
+
+        dispatch(setRoomReady(true));
       } catch (error) {
-        // console.error("Join room error:", error);
+        console.error("Join room error:", error);
       } finally {
         // console.log("finally reached", { roomId, username: currentUser?.username });
         if (roomId && currentUser?.username) {
@@ -109,9 +91,6 @@ export default function PantryRoomPage() {
                 roomId,
                 username: currentUser.username,
               });
-              // console.log(
-              //   `user joined room after connect ${currentUser.username}`,
-              // );
             });
           }
         }
@@ -120,6 +99,12 @@ export default function PantryRoomPage() {
 
     joinRoom();
   }, [roomId, currentUser, dispatch]);
+
+  useEffect(() => {
+    return () => {
+      dispatch(setRoomReady(false)); // cleanup
+    };
+  }, [dispatch]);
 
   return (
     <div className="h-screen flex bg-background text-foreground overflow-hidden">

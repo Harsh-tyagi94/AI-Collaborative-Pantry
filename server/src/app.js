@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import userRouter from "./routes/user.route.js";
 import roomRouter from "./routes/room.route.js";
+import recipeRouter from "./routes/recipe.route.js";
 
 const app = express();
 
@@ -12,7 +13,8 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cookieParser());
 
 app.use("/api/v1/users", userRouter);
-app.use("/api/v1/rooms", roomRouter)
+app.use("/api/v1/rooms", roomRouter);
+app.use("/api/v1/recipes", recipeRouter);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statusCode || 500;

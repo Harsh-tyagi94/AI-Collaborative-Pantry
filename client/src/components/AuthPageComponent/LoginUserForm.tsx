@@ -14,6 +14,7 @@ import { loginUserSchema } from "@/schemas/auth.schema";
 
 import { useDispatch } from "react-redux";
 import { setUser, setAuthLoad } from "@/store/slices/authSlice";
+import { loginUser } from "@/api/auth/auth.api";
 
 export default function LoginUserForm() {
   const navigate = useNavigate();
@@ -49,21 +50,7 @@ export default function LoginUserForm() {
         return;
       }
 
-      const response = await fetch("http://localhost:8000/api/v1/users/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(formData),
-      });
-
-      // 1. Always parse the JSON, even for errors (404, 401, etc.)
-      const data = await response.json();
-
-      // 2. If the response is not 2xx, throw the message from the backend
-      if (!response.ok) {
-        // This 'data.message' matches the 'message' key in your backend error middleware
-        throw new Error(data.message || "Login failed");
-      }
+      const data = await loginUser(formData);
 
       localStorage.setItem("accessToken", data.data.accessToken);
       // console.log("user from API:", data.data.user);

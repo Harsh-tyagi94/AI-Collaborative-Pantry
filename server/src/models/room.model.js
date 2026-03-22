@@ -22,38 +22,37 @@ const memberSchema = new Schema(
 
 const roomSchema = new mongoose.Schema({
     roomId: {
-        type: String,
-        required: true,
-        unique: true,
-        index: true,
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
     },
     admin: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
     roomName: {
-        type: String,
-        trim: true,
-        default: "Our Shared Kitchen",
+      type: String,
+      trim: true,
+      default: "Our Shared Kitchen",
     },
-    generatedRecipe: {
-        type: String,
-        default: ""
-    },
-    finalIngredients: {
-      type: [String],
+    recipes: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Recipe",
+      },
+    ],
+    members: {
+      type: [memberSchema],
       default: [],
     },
-    members: {
-        type: [memberSchema],
-        default: []
-    },
     isActive: {
-        type: Boolean,
-        default: true
+      type: Boolean,
+      default: true,
     },
-}, { timestamps: true }
+  },
+  { timestamps: true }
 );
 
 const Room = mongoose.model('Room', roomSchema)
