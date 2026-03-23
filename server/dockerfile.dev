@@ -1,0 +1,19 @@
+# ══════════════════════════════════════════════════════
+# Server Dockerfile.dev — Development only
+# Uses nodemon for hot reload on file changes
+# ══════════════════════════════════════════════════════
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+# Install ALL deps including nodemon (devDependency)
+RUN npm install
+
+COPY . .
+
+EXPOSE 8000
+
+# Mirrors your "server" script in package.json exactly
+CMD ["npx", "nodemon", "-r", "dotenv/config", "--experimental-json-modules", "src/index.js"]

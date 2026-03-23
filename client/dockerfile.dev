@@ -1,0 +1,18 @@
+# ══════════════════════════════════════════════════════
+# Client Dockerfile.dev — Development only
+# Vite dev server with Hot Module Replacement
+# ══════════════════════════════════════════════════════
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 5173
+
+# --host makes Vite listen on 0.0.0.0 so your browser
+# outside the container can reach it on localhost:5173
+CMD ["npx", "vite", "--host"]

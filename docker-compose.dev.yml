@@ -1,0 +1,35 @@
+# ── Development overlay ───────────────────────────────────────────────────────
+# Run with:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#
+# Changes vs production:
+#   - Uses Dockerfile.dev (nodemon + Vite dev server with HMR)
+#   - Source folders mounted as volumes → file edits reflect instantly
+#   - Client runs on port 5173 instead of 80
+#   - VITE_ URLs point directly to localhost:8000
+
+services:
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev    # nodemon, all deps
+    volumes:
+      - ./server:/app               # Your code → live inside container
+      - /app/node_modules           # Keep container's node_modules separate
+    environment:
+      NODE_ENV: development
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev    # Vite dev server
+    ports:
+      - "5173:5173"                 # Override the prod port (80)
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      CHOKIDAR_USEPOLLING: "true"   # File watching fix for Docker on Mac/Windows
+      VITE_BACKEND_URL: "http://localhost:8000/api/v1"
+      VITE_WEBSOCKET_URL: "http://localhost:8000"

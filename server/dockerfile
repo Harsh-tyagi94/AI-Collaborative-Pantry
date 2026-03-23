@@ -1,19 +1,26 @@
-# 1. Use Node.js version 22
-FROM node:22-alpine
+# ══════════════════════════════════════════════════════
+# Server Dockerfile — Production
+# Plain JavaScript (ESM), no TypeScript compile step
+# ══════════════════════════════════════════════════════
+FROM node:20-alpine
 
-# 2. Set the working directory inside the container
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# 3. Copy package files and install dependencies
+# Copy manifests first — Docker caches this layer
+# Packages only re-download when package.json changes
 COPY package*.json ./
-RUN npm install
 
-# 4. Copy the rest of the server code
+# Install production deps only (no nodemon needed in prod)
+RUN npm ci --omit=dev
+
+# Copy all source files
 COPY . .
 
-# 5. Expose the port our app runs on
-ENV PORT=5173
-EXPOSE 5000
+EXPOSE 8000
 
-# 6. Start the app (we'll use nodemon for development later)
-CMD ["npm", "start"]
+# Health check so docker-compose knows when the server is ready
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+  CMD wget -qO- http://localhost:8000/health || exit 1
+
+# Start directly with node — no nodemon in production
+CMD ["node", "-r", "dotenv/config", "--experimental-json-modules", "src/index.js"]

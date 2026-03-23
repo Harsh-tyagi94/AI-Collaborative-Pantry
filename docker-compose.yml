@@ -1,43 +1,45 @@
 services:
-  # 1. MongoDB - No code needed, Docker pulls the official image
-  db:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
 
-  # 2. Redis - For our real-time collaboration
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-
-  # 3. Backend API
+  # ── Backend: Node.js + Express + Socket.io ───────────────────────────────────
   server:
-    build: ./server
+    build:
+      context: ./server        # Docker looks for server/Dockerfile
+      dockerfile: Dockerfile
+    container_name: pantry_server
+    restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "8000:8000"            # host:container
+    env_file:
+      - ./server/.env          # Loads your server .env file
     environment:
-      - MONGO_URI=mongodb://db:27017/collaborative_pantry
-    depends_on:
-      - db
-      - redis
-    volumes:
-      - ./server:/usr/src/app
-      - /usr/src/app/node_modules
+      NODE_ENV: production
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 25s
 
-  # 4. Frontend React
+  # ── Frontend: React/Vite built → served by nginx ─────────────────────────────
   client:
-    build: ./client
+    build:
+      context: ./client        # Docker looks for client/Dockerfile
+      dockerfile: Dockerfile
+      args:
+        # In Docker, nginx proxies /api → server:8000
+        # So the browser just calls /api/v1 — no full URL needed
+        VITE_BACKEND_URL: /api/v1
+        VITE_WEBSOCKET_URL: /
+    container_name: pantry_client
+    restart: unless-stopped
     ports:
-      - "5173:5173"
+      - "80:80"                # Visit http://localhost in your browser
     depends_on:
-      - server
-    volumes:
-      - ./client:/usr/src/app
-      - /usr/src/app/node_modules
-      - /usr/src/app/dist
+      server:
+        condition: service_healthy
 
-volumes:
-  mongo_data:
+# Both containers share this network and can reach
+# each other by service name (e.g. http://server:8000)
+networks:
+  default:
+    name: pantry_network
