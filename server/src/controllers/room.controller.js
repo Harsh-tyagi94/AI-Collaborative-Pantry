@@ -5,6 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { nanoid } from "nanoid";
 import { startCleanupTask } from "../utils/cleanup.js";
+import { Recipe } from "../models/recipe.model.js";
 
 const createRoom = asyncHandler(async (req, res) => {
   // 1. Validation (Optional room name, but admin is mandatory)
@@ -292,7 +293,6 @@ const getRoomHistory = asyncHandler(async (req, res) => {
       options: { sort: { createdAt: -1 }, limit: 1 }, // 🔥 only latest
       select: "recipeText ingredients createdAt",
     });
-
   // Member rooms
   const memberRoomsRaw = await Room.find({
     "members.userId": userId,
@@ -336,7 +336,7 @@ const getRoomRecipe = asyncHandler(async (req, res) => {
         roomId: room.roomId,
         roomName: room.roomName,
         adminId: room.admin,
-        isActive: room.isActive
+        isActive: room.isActive,
       },
       "Recipe retrieved successfully",
     ),
@@ -352,23 +352,21 @@ const deleteRoom = asyncHandler(async (req, res) => {
   }
 
   if (room.admin.toString() !== req.user._id.toString()) {
-    throw new ApiError(
-      403,
-      "Only the room admin can delete this room"
-    );
+    throw new ApiError(403, "Only the room admin can delete this room");
   }
 
   await Recipe.deleteMany({ roomId });
   await Room.deleteOne({ roomId });
 
-
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      null,
-      "Room and all associated recipes deleted successfully"
-    )
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        null,
+        "Room and all associated recipes deleted successfully",
+      ),
+    );
 });
 
 export {

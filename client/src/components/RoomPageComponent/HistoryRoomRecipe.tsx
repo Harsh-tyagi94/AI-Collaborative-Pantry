@@ -28,9 +28,6 @@ export default function RoomRecipePage() {
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const adminId = useSelector((state: RootState) => state.room.adminId);
 
-  console.log("currentUser:", currentUser);
-  console.log("adminId:", adminId);
-
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);

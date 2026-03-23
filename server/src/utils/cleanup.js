@@ -22,14 +22,10 @@ const startCleanupTask = async () => {
       const membersKey = `room:${roomId}:online`;
       const members = await redisClient.smembers(membersKey);
 
-      room.members = members;
       room.isActive = false;
       await room.save();
 
-      // Delete Redis keys
       await redisClient.del(`room:${roomId}:pantry`, `room:${roomId}:online`);
-
-      console.log(`Room ${roomId} marked inactive and cleaned.`);
     }
   } catch (error) {
     console.error("Cleanup Task Error:", error);
